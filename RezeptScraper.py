@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup as soup
 import pandas as pd
 import random
 from datetime import datetime
+from recipeManager import addRecipe
 
 CHEFKOCH_LINK = "https://www.chefkoch.de/rs/s0/Rezepte.html"
 
@@ -56,7 +57,7 @@ def getRezeptInfo(url):
 			zutaten.append((ingredient.text[:ingredient.text.index("(")].replace("\n","") + ingredient.text[ingredient.text.index(")") + 1:].replace("\n","")).rstrip())
 			continue
 		zutaten.append(ingredient.text.replace("\n","").rstrip())
-	return str(rezeptName) + ";" + str(rating) + ";" + str(url) + ";" +  str(imgsrc) + ";" + str(zutaten)
+	return rezeptName, rating, url, imgsrc, zutaten
 	
 def filewriter(filename, line):
     with open(filename, 'a', encoding="utf-8") as f:
@@ -72,7 +73,8 @@ def downloadStuff():
 		for link in matchlinks:
 			print("Downloading No:" +  str(index) + " | Link: " + str(link))
 			index +=1
-			filewriter("rezeptData.csv", getRezeptInfo(link))
+			rezeptName, rating, url, imgsrc, zutaten = getRezeptInfo(link)
+			addRecipe(rezeptName, rating, url, imgsrc, zutaten)
 			if index > 5000: return
 		masterlink = nextpageurl	
 

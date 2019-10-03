@@ -1,13 +1,16 @@
+import mysql.connector
+
 def getCursor():
 	try:
-		return getConnection.getCursor()
+		connection = getConnection()
+		return connection.cursor()
 	except Exception as e:
-		
+		print(e)
+		pass
 
-	
 def getConnection():
 	try:
-		db = MySQLdb.connect(host="localhost",    # your host, usually localhost
+		db = mysql.connector.connect(host="localhost",    # your host, usually localhost
                      user="rezepte",         # your username
                      passwd="1604",  # your password
                      database="rezepte"
