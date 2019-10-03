@@ -47,6 +47,6 @@ if not ingredientExists:
 	cursor.execute('CREATE TABLE ingredient(ID INT NOT NULL AUTO_INCREMENT, name VARCHAR(255) NOT NULL, PRIMARY KEY(ID))')
 	print('table ingredient successfully created!')
 if not recipeExists:
-	cursor.execute('CREATE TABLE recipe(ID INT NOT NULL AUTO_INCREMENT, name VARCHAR(255) NOT NULL, source VARCHAR(255), img_source VARCHAR(255), rating FLOAT, PRIMARY KEY(ID))')
+	cursor.execute('CREATE TABLE recipe(ID INT NOT NULL AUTO_INCREMENT, name VARCHAR(255) NOT NULL UNIQUE, source VARCHAR(255), img_source VARCHAR(255), rating FLOAT, PRIMARY KEY(ID))')
 	print('table recipe successfully created!')
 print('update script runned with ' + str(warningCount) + ' warnings')
