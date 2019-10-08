@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup as soup
 import pandas as pd
 import random
 from datetime import datetime
-from recipeManager import addRecipe
+from multiprocessing import pool
+#from recipeManager import addRecipe
 
 CHEFKOCH_LINK = "https://www.chefkoch.de/rs/s0/Rezepte.html"
 
@@ -39,6 +40,35 @@ def findRezeptLinks(page_soup):
 def findLinkToNextPage(page_soup):
 	nextPage = page_soup.find("a", {"class": "ds-page-link bi-paging-next"})
 	return nextPage["href"]
+
+def constructAllRecipePageLinks(count = 11420):
+	basehtml = "https://www.chefkoch.de/rs/s__/Rezepte.html"
+	result = [CHEFKOCH_LINK]
+	for i in range(count):
+		result.append(basehtml.replace("__", str(i*30)))
+	return result
+
+def getAllRecipePageLinks():
+	#Weil insgesamt ~340k Rezepte und 30 pro Page => 11420
+	recipePageCount = 11420
+	result = []
+	currentlink = CHEFKOCH_LINK
+	while  True:
+		if len(result) > recipePageCount:
+			return result
+		if len(result) % 100 == 0: print("RecipePages Loaded: " + str(len(result)))
+		result.append(currentlink)
+		currentlink = findLinkToNextPage(getRawData(currentlink))
+
+def asyncLoad(recipePageList):
+	with pool.Pool(10) as p:
+		p.map(asyncSinglePageLoad, recipePageList)
+
+def asyncSinglePageLoad(page_list_url):
+	page_soup = getRawData(page_list_url)
+	for rezept in findRezeptLinks(page_soup):
+		rezeptName, rating, url, imgsrc, zutaten = getRezeptInfo(rezept)
+	print("Finished a page")
 
 def getRezeptInfo(url):
 	zutaten = []
@@ -80,6 +110,7 @@ def downloadStuff():
 
 startTime = datetime.now()
 
-downloadStuff()
+#downloadStuff()
+asyncLoad(constructAllRecipePageLinks(count = 20))
 
 print(datetime.now() - startTime)
