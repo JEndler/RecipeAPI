@@ -5,7 +5,7 @@ import pandas as pd
 import random
 from datetime import datetime
 from multiprocessing import pool
-#from recipeManager import addRecipe
+from recipeManager import addRecipe
 
 CHEFKOCH_LINK = "https://www.chefkoch.de/rs/s0/Rezepte.html"
 
@@ -61,13 +61,14 @@ def getAllRecipePageLinks():
 		currentlink = findLinkToNextPage(getRawData(currentlink))
 
 def asyncLoad(recipePageList):
-	with pool.Pool(10) as p:
+	with pool.Pool(4) as p:
 		p.map(asyncSinglePageLoad, recipePageList)
 
 def asyncSinglePageLoad(page_list_url):
 	page_soup = getRawData(page_list_url)
 	for rezept in findRezeptLinks(page_soup):
 		rezeptName, rating, url, imgsrc, zutaten = getRezeptInfo(rezept)
+		addRecipe(rezeptName, rating, url, imgsrc, zutaten)
 	print("Finished a page")
 
 def getRezeptInfo(url):
@@ -111,6 +112,6 @@ def downloadStuff():
 startTime = datetime.now()
 
 #downloadStuff()
-asyncLoad(constructAllRecipePageLinks(count = 20))
+asyncLoad(constructAllRecipePageLinks(count = 30))
 
 print(datetime.now() - startTime)

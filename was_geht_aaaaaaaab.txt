@@ -1,0 +1,15 @@
+WAS GEHT AAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBB??????????????
+
+Flask zur Datenbank:
+-Select von rezepten (suche nach rezepten mit zutaten) (Henry)
+
+App zu Flask:
+-Requests strukturieren
+
+Flask nach draußen:
+-Requests strukturieren
+
+Frontend:
+-ich nicht
+-Website auf Mobile nice?
+-Eine App
