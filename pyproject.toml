@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "recipeapp"
+version = "0.1.0"
+description = ""
+authors = ["Jakob Endler <jakob.endler@hotmail.de>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+beautifulsoup4 = "^4.11.1"
+lxml = "^4.9.1"
+pandas = "^1.4.4"
+mysql-connector-python = "^8.0.30"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
