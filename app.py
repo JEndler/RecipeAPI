@@ -1,4 +1,4 @@
-from flask import abort, jsonify, make_response, Flask
+from flask import abort, jsonify, make_response, Flask 
 #from recipeManager import getRecipes
 import json
 
