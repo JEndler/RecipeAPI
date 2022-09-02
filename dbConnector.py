@@ -62,8 +62,8 @@ class dbConnector():
         
         """
         c.executescript(command)
-        c.close()
         self.conn.commit()
+        c.close()
 
     def close_connection(self):
         self.conn.close()
@@ -76,14 +76,14 @@ class dbConnector():
             (name)
             VALUES ('{}')
             """.format(Name.lower()))
-            c.close()
-            self.conn.commit()
         except sqlite3.IntegrityError:
             logger.info("INFO: Failed to add Ingredient (Ingredient name must be unique)")
         except sqlite3.OperationalError:
             logger.error("ERROR: operational error")
         except:
             logger.error("ERROR: addIngredient failed: Unknown error")
+        finally:
+            self.conn.commit()
                     
     
     def addIngredients(self, names: list):
@@ -98,14 +98,14 @@ class dbConnector():
             (name)
             VALUES ('{}')
             """.format(Name.lower()))
-            c.close()
-            self.conn.commit()
         except sqlite3.IntegrityError:
             logger.info("INFO: Failed to add Tag (Tag name must be unique)")
         except sqlite3.OperationalError:
             logger.error("ERROR: operational error")
         except:
             logger.error("ERROR: addIngredient failed: Unknown error")
+        finally:
+            self.conn.commit()
                     
     
     def addTags(self, names: list):
@@ -131,22 +131,32 @@ class dbConnector():
             recipeID = c.fetchall()[0][0]
 
             # Insert ingredients in the ingredients table:
-            
             self.addIngredients(ingredients)
-            for ingredient in ingredients:
-                c.execute("SELECT ID FROM Ingredients WHERE name ='" + ingredient + "'")
-                ingredientID = c.fetchall()[0][0]
-                c.execute("INSERT INTO Recipes_Ingredients(recipe_id, ingredient_id) VALUES ({},{})".format(str(recipeID),str(ingredientID)))
-                self.conn.commit()
+            try:
 
+                for ingredient in ingredients:
+                    SQL = "SELECT ID FROM Ingredients WHERE name ='" + ingredient.lower() + "'"
+                    c.execute(SQL)
+                    ingredientID = c.fetchall()[0][0]
+                    SQL = "INSERT INTO Recipes_Ingredients(recipe_id, ingredient_id) VALUES ({},{})".format(str(recipeID),str(ingredientID))
+                    c.execute(SQL)
+                    self.conn.commit()
+            except sqlite3.IntegrityError:
+                    logger.info("INFO: Failed to add ingredient (name must be unique)")
+            except Exception as e:
+                logger.error(e)
+            
             # Insert tags in the tags table:
             self.addTags(tags)
             for tag in tags:
-                c.execute("SELECT ID FROM Tags WHERE name ='" + tag + "'")
-                ingredientID = c.fetchall()[0][0]
-                c.execute("INSERT INTO Recipes_Tags(recipe_id, tag_id) VALUES ({},{})".format(str(recipeID),str(tag)))
+                c.execute("SELECT ID FROM Tags WHERE name ='" + tag.lower() + "'")
+                tagID = c.fetchall()[0][0]
+                c.execute("INSERT INTO Recipes_Tags(recipe_id, tag_id) VALUES ({},{})".format(str(recipeID),str(tagID)))
                 self.conn.commit()
-        except:
+        except sqlite3.IntegrityError:
+                    logger.info("INFO: Failed to add tag (name must be unique)")
+        except Exception as e:
+            logger.error(e)
             traceback.print_exc
         finally:
             c.close()
@@ -226,7 +236,7 @@ def main():
 
     connection = dbConnector()
     connection.createDatabase()
-    connection.addIngredient("Banane")
+    connection.addRecipe("a", "a", "a" , 0.5, ["Apfel"], ["Vegan"])
     connection.close_connection()
     print("Done")
 
