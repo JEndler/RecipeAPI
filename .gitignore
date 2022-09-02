@@ -1,9 +1,13 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
+__pycache__/*
 *.py[cod]
 *$py.class
+*.pyc
 
 data/log.txt
 .env
 data/db_log.txt
 data/recipedata.sqlite
+__pycache__/recipeManager.cpython-310.pyc
+data/recipes.p
+__pycache__/recipeManager.cpython-310.pyc
