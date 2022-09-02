@@ -14,7 +14,6 @@ import os
 @Author: Jakob Endler
 """
 
-
 # Instantiating the Logger and the File Handler
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -24,6 +23,8 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 CHEFKOCH_LINK = "https://www.chefkoch.de/rs/s0/Rezepte.html"
+
+CHEFKOCH_RANDOM_LINK = "https://www.chefkoch.de/rezepte/zufallsrezept/"
 
 SAMPLE_RECIPE = "https://www.chefkoch.de/rezepte/2293561365672708/Gulaschsuppe-im-Kessel-oder-Topf.html"
 
@@ -53,67 +54,29 @@ def getRawData(url, useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67
 	page_soup = soup(page_html, "html.parser")
 	return page_soup
 
-def findRezeptLinks(page_soup):
-	"""returns a list of all links to recipes on the given page
-
-	@Params:
-		page_soup: a bs4.soup-Object of a recipe page
-	@returns a list of links as strings
-	"""
-	rezept_link_list = []
-	result_holder = page_soup.findAll("div", {"class": "ds-recipe-card bi-recipe-item"})
-	result = []
-	for rezept in result_holder:
-		result.extend(rezept.findAll("a", {'href': True}))
-	for link in result:
-		href = str(link['href'])
-		if "/rezepte/" in href:
-			rezept_link_list.append(href)
-	return rezept_link_list
-
-def findLinkToNextPage(page_soup):
-	nextPage = page_soup.findAll("a", {"class": "ds-btn ds-btn--round ds-btn--control"})[-1]
-	return nextPage["href"]
-
-def constructAllRecipePageLinks(count = 11420):
-	basehtml = "https://www.chefkoch.de/rs/s__/Rezepte.html"
-	result = [CHEFKOCH_LINK]
-	for i in range(count):
-		result.append(basehtml.replace("__", str(i)))
-	return result
-
-def getAllRecipePageLinks():
-	#Weil insgesamt ~360k Rezepte und 41 pro Page => 11420
-	result = []
-	currentlink = CHEFKOCH_LINK
-	while  True:
-		if len(result) % 100 == 0: print("RecipePages Loaded: " + str(len(result)))
-		result.append(currentlink)
-		try:
-			currentlink = "https://www.chefkoch.de" + findLinkToNextPage(getRawData(currentlink))
-			print(currentlink)
-		except Exception as e:
-			print("Error while loading next page")
-			print(e)
-			break
-	return result
-
 def getRandomRecipeLink():
 	"""returns a random link to a recipe page"""
-	return (urlopen("https://www.chefkoch.de/rezepte/zufallsrezept/").geturl())
+	return (urlopen(CHEFKOCH_RANDOM_LINK).geturl())
 
-def asyncLoad(recipePageList):
-	with pool.Pool(4) as p:
-		p.map(asyncSinglePageLoad, recipePageList)
+def asyncLoad(threads, url = CHEFKOCH_RANDOM_LINK):
+	"""Multithreaded loading of recipes."""
 
-def asyncSinglePageLoad(page_list_url):
-	page_soup = getRawData(page_list_url)
-	for rezept in findRezeptLinks(page_soup):
-		rezeptName, rating, url, imgsrc, zutaten = getRezeptInfo(rezept)
+	def asyncSinglePageLoad(page_url):
+		rezeptName, rating, url, imgsrc, zutaten = getRezeptInfo(page_url)
 		#addRecipe(rezeptName, rating, url, imgsrc, zutaten)
-	print("Finished a page")
+
+	with pool.Pool(threads) as p:
+		p.map(asyncSinglePageLoad, url)
+
 
 def getRezeptInfo(url):
+	"""Given a url to a recipe, returns a tuple of the following information:
+		- Name of the Recipe
+		- Rating of the Recipe
+		- URL to the Recipe
+		- URL to the Image of the Recipe
+		- List of Ingredients
+	"""
 	zutaten = []
 	page_soup = getRawData(url)
 	imgsrc = page_soup.find("a", {"class":"bi-recipe-slider-open ds-target-link"})
@@ -136,22 +99,10 @@ def filewriter(filename, line):
     with open(filename, 'a', encoding="utf-8") as f:
         f.write("\n" + line.rstrip('\r\n'))
 
-def downloadStuff():
-	index = 1
-	masterlink = CHEFKOCH_LINK
-	while True:
-		page_soup = getRawData(masterlink)
-		matchlinks = findRezeptLinks(page_soup)
-		nextpageurl = findLinkToNextPage(page_soup)
-		for link in matchlinks:
-			print("Downloading No:" +  str(index) + " | Link: " + str(link))
-			index +=1
-			rezeptName, rating, url, imgsrc, zutaten = getRezeptInfo(link)
-			#addRecipe(rezeptName, rating, url, imgsrc, zutaten)
-			if index > 5000: return
-		masterlink = nextpageurl	
-
 def bruteForceRandomRecipes(limit=2000):
+	"""brute forces random recipes until limit is reached
+	   saves each recipe to a dictionary and writes it to a file.
+	"""
 	result = {}
 	while len(result) < limit:
 		try:
@@ -166,12 +117,11 @@ def bruteForceRandomRecipes(limit=2000):
 	pickle.dump(result, open("data/recipes.p", "wb" ) )
 	return result
 
-
 startTime = datetime.now()
 
 if os.environ.get("HTTP_PROXY") is not None:
 	print("Using Proxy.")
 
-bruteForceRandomRecipes(limit=2000)
+# bruteForceRandomRecipes(limit=2000)
 
 print(datetime.now() - startTime)

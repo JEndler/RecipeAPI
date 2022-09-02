@@ -1,11 +1,13 @@
-from flask import abort
-from recipeManager import getRecipes
+from flask import abort, jsonify, make_response, Flask
+#from recipeManager import getRecipes
 import json
 
 #so müssen die ingredients aussehen
 test_ingredient_list = {"ingredients":['möhre', 'gurke', 'lmao']}
 
-@app.route('/todo/api/v1.0/tasks/<str:json_arr>', methods=['GET'])
+app = Flask(__name__)
+
+@app.route('/api/<str:json_arr>', methods=['GET'])
 def get_task(json_arr):
 	try:
 		data  = json.loads(json_arr)
@@ -16,8 +18,9 @@ def get_task(json_arr):
 	if len(ingredient_list) < 3: 
 		print("To few ingredients")
 		abort(404)
-	recipe_data = getRecipes(ingredient_list)
-    return jsonify(recipe_data=list)
+	#recipe_data = getRecipes(ingredient_list)
+	recipe_data = test_ingredient_list
+	return jsonify(recipe_data=list)
 
 @app.errorhandler(404)
 def not_found(error):
