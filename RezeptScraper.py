@@ -7,6 +7,8 @@ from datetime import datetime
 from multiprocessing import pool
 #from recipeManager import addRecipe
 import logging
+import pickle
+import os
 
 """
 @Author: Jakob Endler
@@ -20,7 +22,6 @@ handler = logging.FileHandler('data/log.txt')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-
 
 CHEFKOCH_LINK = "https://www.chefkoch.de/rs/s0/Rezepte.html"
 
@@ -36,6 +37,9 @@ def getRawData(url, useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67
 
 	# User Agent Mozilla to Circumvent Security Blocking
 	req = Request(url, headers={'User-Agent': useragent})
+
+	# If using a proxy, define a .env file with the following content:
+	# http_proxy=http://<proxy>:<port>
 
 	# Connect and Save the HTML Page
 	uClient = urlopen(req)
@@ -65,7 +69,7 @@ def findRezeptLinks(page_soup):
 	return rezept_link_list
 
 def findLinkToNextPage(page_soup):
-	nextPage = page_soup.find("a", {"class": "ds-btn ds-btn--round ds-btn--control"})
+	nextPage = page_soup.findAll("a", {"class": "ds-btn ds-btn--round ds-btn--control"})[-1]
 	return nextPage["href"]
 
 def constructAllRecipePageLinks(count = 11420):
@@ -84,11 +88,16 @@ def getAllRecipePageLinks():
 		result.append(currentlink)
 		try:
 			currentlink = "https://www.chefkoch.de" + findLinkToNextPage(getRawData(currentlink))
+			print(currentlink)
 		except Exception as e:
 			print("Error while loading next page")
 			print(e)
 			break
 	return result
+
+def getRandomRecipeLink():
+	"""returns a random link to a recipe page"""
+	return (urlopen("https://www.chefkoch.de/rezepte/zufallsrezept/").geturl())
 
 def asyncLoad(recipePageList):
 	with pool.Pool(4) as p:
@@ -135,19 +144,31 @@ def downloadStuff():
 			print("Downloading No:" +  str(index) + " | Link: " + str(link))
 			index +=1
 			rezeptName, rating, url, imgsrc, zutaten = getRezeptInfo(link)
-			addRecipe(rezeptName, rating, url, imgsrc, zutaten)
+			#addRecipe(rezeptName, rating, url, imgsrc, zutaten)
 			if index > 5000: return
 		masterlink = nextpageurl	
 
+def bruteForceRandomRecipes(limit=2000):
+	result = {}
+	while len(result) < limit:
+		try:
+			new_link = getRandomRecipeLink()
+			if new_link in result: continue
+			result[new_link] = list(getRezeptInfo(new_link))
+			print("Just added " + str(len(result[new_link][0])))
+		except Exception as e:
+			print("Error while recipe")
+			print(e)
+			break
+	pickle.dump(result, open("data/recipes.p", "wb" ) )
+	return result
+
+
 startTime = datetime.now()
 
-link_list = getAllRecipePageLinks()
+if os.environ.get("HTTP_PROXY") is not None:
+	print("Using Proxy.")
 
-# Write links to file in data/links.txt
-with open("data/links.txt", "w") as f:
-	f.writelines(link_list)
-
-#downloadStuff()
-#asyncLoad(constructAllRecipePageLinks(count = 30))
+bruteForceRandomRecipes(limit=2000)
 
 print(datetime.now() - startTime)
