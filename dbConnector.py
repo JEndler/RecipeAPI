@@ -75,7 +75,6 @@ class dbConnector():
             INSERT INTO Ingredients
             (name)
             VALUES ('{}')
-            ON DUPLICATE KEY INSERT IGNORE
             """.format(Name.lower()))
             c.close()
             self.conn.commit()
@@ -98,7 +97,6 @@ class dbConnector():
             INSERT INTO Tags
             (name)
             VALUES ('{}')
-            ON DUPLICATE KEY INSERT IGNORE
             """.format(Name.lower()))
             c.close()
             self.conn.commit()
@@ -123,7 +121,6 @@ class dbConnector():
                 INSERT INTO Recipes
                 (name, source, img_source, rating)
                 VALUES (?,?,?,?)
-                ON DUPLICATE KEY INSERT IGNORE
                 """, tpl)
                 self.conn.commit()
             except sqlite3.IntegrityError:
