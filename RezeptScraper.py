@@ -5,7 +5,7 @@ import pandas as pd
 import random
 from datetime import datetime
 from multiprocessing import pool
-from recipeManager import addRecipe
+#from recipeManager import addRecipe
 import logging
 
 """
@@ -98,7 +98,7 @@ def asyncSinglePageLoad(page_list_url):
 	page_soup = getRawData(page_list_url)
 	for rezept in findRezeptLinks(page_soup):
 		rezeptName, rating, url, imgsrc, zutaten = getRezeptInfo(rezept)
-		addRecipe(rezeptName, rating, url, imgsrc, zutaten)
+		#addRecipe(rezeptName, rating, url, imgsrc, zutaten)
 	print("Finished a page")
 
 def getRezeptInfo(url):

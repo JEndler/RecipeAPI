@@ -1,4 +1,4 @@
-from dbManager import getCursor
+from dbConnector import getCursor
 import mysql.connector
 
 def addRecipe(recipeName, rating, url, img_url, ingredients):
