@@ -48,11 +48,12 @@ def getRawData(url, useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67
 	# Connect and Save the HTML Page
 	uClient = urlopen(req)
 	page_html = uClient.read()
+	redirect_url = uClient.geturl()
 	uClient.close()
 
 	# Parse HTML
 	page_soup = soup(page_html, "html.parser")
-	return page_soup
+	return page_soup, redirect_url
 
 def getRandomRecipeLink():
 	"""returns a random link to a recipe page"""
@@ -62,6 +63,7 @@ def asyncSinglePageLoad(page_url):
 	db = dbConnector.dbConnector()
 	try:
 		result = getRezeptInfo(page_url)
+		print(result)
 		db.addRecipe(result[0], result[2], result[3], result[1], result[4], result[5])
 		print("Just added " + str(result[0]))
 	except Exception as e:
@@ -82,10 +84,11 @@ def getRezeptInfo(url):
 		- Rating of the Recipe
 		- URL to the Recipe
 		- URL to the Image of the Recipe
-		- List of Ingredients
+		- List of Ingredients 
+		- List of Tags
 	"""
 	zutaten = []
-	page_soup = getRawData(url)
+	page_soup, redirect_url = getRawData(url)
 	imgsrc = page_soup.find("a", {"class":"bi-recipe-slider-open ds-target-link"})
 	imgsrc = str(imgsrc)[str(imgsrc).find("src=") + 5:]
 	imgsrc = imgsrc[:imgsrc.find('"')]
@@ -101,7 +104,7 @@ def getRezeptInfo(url):
 			continue
 		zutaten.append(ingredient.text.replace("\n","").rstrip())
 	tags = [tag.text.strip() for tag in page_soup.findAll("a", {"class":"ds-tag bi-tags"})]
-	return rezeptName, rating, url, imgsrc, zutaten, tags
+	return rezeptName, rating, redirect_url, imgsrc, zutaten, tags
 
 def filewriter(filename, line):
     with open(filename, 'a', encoding="utf-8") as f:
