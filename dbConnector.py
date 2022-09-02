@@ -29,10 +29,6 @@ class dbConnector():
     def createDatabase(self):
         c = self.conn.cursor()
         command = """
-        CREATE TABLE IF NOT EXISTS Ingredients (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE
-        );
 
         CREATE TABLE IF NOT EXISTS Recipes (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,10 +38,26 @@ class dbConnector():
             rating FLOAT
         );
 
+        CREATE TABLE IF NOT EXISTS Ingredients (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        );
+
         CREATE TABLE IF NOT EXISTS Recipes_Ingredients (
             recipe_id INT NOT NULL,
             ingredient_id INT NOT NULL,
             PRIMARY KEY (recipe_id, ingredient_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS Tags (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        );
+
+        CREATE TABLE IF NOT EXISTS Recipes_Tags (
+            recipe_id INT NOT NULL,
+            tag_id INT NOT NULL,
+            PRIMARY KEY (recipe_id, tag_id)
         );
         
         """
@@ -56,7 +68,7 @@ class dbConnector():
     def close_connection(self):
         self.conn.close()
     
-    def addRecipe(self, Name: str, Source: str, Img_Source: str, rating: float, ingredients: list):
+    def addRecipe(self, Name: str, Source: str, Img_Source: str, rating: float, ingredients: list, tags: list):
         try:
             try:
                 c = self.conn.cursor()
@@ -65,26 +77,44 @@ class dbConnector():
                 INSERT INTO Recipes
                 (name, source, img_source, rating)
                 VALUES (?,?,?,?)
+                ON DUPLICATE KEY INSERT IGNORE
                 """, tpl)
                 self.conn.commit()
             except sqlite3.IntegrityError:
-                    print("INFO: Failed to add Recipe (source must be unique)")
+                    logger.info("INFO: Failed to add Recipe (source must be unique)")
             c.execute("""
             SELECT ID from Recipes
             WHERE name = '{}'""".format(Name))
             recipeID = c.fetchall()[0][0]
+
+            # Insert ingredients in the ingredients table:
             for ingredient in ingredients:
                 try:
-                    c.execute("INSERT INTO Ingredients(name) VALUES('" + ingredient + "')")
+                    c.execute("INSERT INTO Ingredients(name) VALUES('" + ingredient + "') ON DUPLICATE KEY INSERT IGNORE")
                     self.conn.commit()
                 except sqlite3.IntegrityError:
-                    print("INFO: Failed to add Ingredient (name must be unique)")
-                except Exception as e:
+                    logger.info("INFO: Failed to add Ingredient (name must be unique)")
+                except Exception:
                     pass
                 finally:
                     c.execute("SELECT ID FROM Ingredients WHERE name ='" + ingredient + "'")
                     ingredientID = c.fetchall()[0][0]
                     c.execute("INSERT INTO Recipes_Ingredients(recipe_id, ingredient_id) VALUES ({},{})".format(str(recipeID),str(ingredientID)))
+                    self.conn.commit()
+
+            # Insert tags in the tags table:
+            for tag in tags:
+                try:
+                    c.execute("INSERT INTO Tags(name) VALUES('" + tag + "') ON DUPLICATE KEY INSERT IGNORE")
+                    self.conn.commit()
+                except sqlite3.IntegrityError:
+                    logger.info("INFO: Failed to add Tag (name must be unique)")
+                except Exception:
+                    pass
+                finally:
+                    c.execute("SELECT ID FROM Tags WHERE name ='" + tag + "'")
+                    ingredientID = c.fetchall()[0][0]
+                    c.execute("INSERT INTO Recipes_Tags(recipe_id, tag_id) VALUES ({},{})".format(str(recipeID),str(tag)))
                     self.conn.commit()
         except:
             traceback.print_exc
@@ -133,6 +163,7 @@ class dbConnector():
             INSERT INTO Ingredients
             (name)
             VALUES ('{}')
+            ON DUPLICATE KEY INSERT IGNORE
             """.format(Name.lower()))
             c.close()
             self.conn.commit()
@@ -185,7 +216,7 @@ def main():
 
     connection = dbConnector()
     connection.createDatabase()
-    print(connection.getAPIData(["Salz" , 'Zwiebel', "Knoblauch"]))
+    connection.addIngredient("Banane")
     connection.close_connection()
     print("Done")
 

@@ -5,3 +5,5 @@ __pycache__/
 
 data/log.txt
 .env
+data/db_log.txt
+data/recipedata.sqlite
