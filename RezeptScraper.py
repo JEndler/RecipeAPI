@@ -40,6 +40,9 @@ def getRawData(url, useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67
 
 	# If using a proxy, define a .env file with the following content:
 	# http_proxy=http://<proxy>:<port>
+	
+	# Also, when running with poetry, use this command to install support for .env files:
+	# poetry self add poetry-dotenv-plugin
 
 	# Connect and Save the HTML Page
 	uClient = urlopen(req)
@@ -155,7 +158,7 @@ def bruteForceRandomRecipes(limit=2000):
 			new_link = getRandomRecipeLink()
 			if new_link in result: continue
 			result[new_link] = list(getRezeptInfo(new_link))
-			print("Just added " + str(len(result[new_link][0])))
+			print("Just added " + str(result[new_link][0]))
 		except Exception as e:
 			print("Error while recipe")
 			print(e)
