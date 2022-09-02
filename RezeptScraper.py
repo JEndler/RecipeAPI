@@ -5,7 +5,7 @@ import pandas as pd
 import random
 from datetime import datetime
 from multiprocessing import pool
-#from recipeManager import addRecipe
+import dbConnector
 import logging
 import pickle
 import os
@@ -58,15 +58,22 @@ def getRandomRecipeLink():
 	"""returns a random link to a recipe page"""
 	return (urlopen(CHEFKOCH_RANDOM_LINK).geturl())
 
-def asyncLoad(threads, url = CHEFKOCH_RANDOM_LINK):
+def asyncSinglePageLoad(page_url):
+	db = dbConnector.dbConnector()
+	try:
+		result = getRezeptInfo(page_url)
+		db.addRecipe(result[0], result[2], result[3], result[1], result[4], result[5])
+		print("Just added " + str(result[0]))
+	except Exception as e:
+		print("Error while recipe loading: " + str(page_url))
+		print(e)
+	db.close_connection()
+
+def asyncLoad(threads = 8, url = CHEFKOCH_RANDOM_LINK, scrape_count = 5000):
 	"""Multithreaded loading of recipes."""
 
-	def asyncSinglePageLoad(page_url):
-		rezeptName, rating, url, imgsrc, zutaten = getRezeptInfo(page_url)
-		#addRecipe(rezeptName, rating, url, imgsrc, zutaten)
-
 	with pool.Pool(threads) as p:
-		p.map(asyncSinglePageLoad, url)
+		p.map(asyncSinglePageLoad, [url] * scrape_count)
 
 
 def getRezeptInfo(url):
@@ -93,28 +100,32 @@ def getRezeptInfo(url):
 			zutaten.append((ingredient.text[:ingredient.text.index("(")].replace("\n","") + ingredient.text[ingredient.text.index(")") + 1:].replace("\n","")).rstrip())
 			continue
 		zutaten.append(ingredient.text.replace("\n","").rstrip())
-	return rezeptName, rating, url, imgsrc, zutaten
-	
+	tags = [tag.text.strip() for tag in page_soup.findAll("a", {"class":"ds-tag bi-tags"})]
+	return rezeptName, rating, url, imgsrc, zutaten, tags
+
 def filewriter(filename, line):
     with open(filename, 'a', encoding="utf-8") as f:
         f.write("\n" + line.rstrip('\r\n'))
 
-def bruteForceRandomRecipes(limit=2000):
+def bruteForceRandomRecipes(limit=3000):
 	"""brute forces random recipes until limit is reached
 	   saves each recipe to a dictionary and writes it to a file.
 	"""
 	result = {}
+	db = dbConnector.dbConnector()
 	while len(result) < limit:
 		try:
 			new_link = getRandomRecipeLink()
 			if new_link in result: continue
 			result[new_link] = list(getRezeptInfo(new_link))
+			db.addRecipe(result[new_link][0], result[new_link][2], result[new_link][3], result[new_link][1], result[new_link][4], result[new_link][5])
 			print("Just added " + str(result[new_link][0]))
 		except Exception as e:
 			print("Error while recipe")
 			print(e)
 			break
 	pickle.dump(result, open("data/recipes.p", "wb" ) )
+	db.close_connection()
 	return result
 
 startTime = datetime.now()
@@ -122,6 +133,6 @@ startTime = datetime.now()
 if os.environ.get("HTTP_PROXY") is not None:
 	print("Using Proxy.")
 
-# bruteForceRandomRecipes(limit=2000)
+asyncLoad(threads=8, scrape_count=1)
 
 print(datetime.now() - startTime)

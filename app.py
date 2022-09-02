@@ -1,9 +1,6 @@
 from flask import abort, jsonify, make_response, Flask 
-#from recipeManager import getRecipes
+from dbConnector import dbConnector, getRecipes
 import json
-
-#so müssen die ingredients aussehen
-test_ingredient_list = {"ingredients":['möhre', 'gurke', 'lmao']}
 
 app = Flask(__name__)
 
@@ -12,7 +9,6 @@ def get_task(ingredient_list):
 	try:
 		assert ";" in ingredient_list, "No valid input"
 		data  = ingredient_list.split(";")
-		print(data)
 	except Exception as e:
 		print(e)
 		print("Invalid Input")
@@ -21,9 +17,9 @@ def get_task(ingredient_list):
 	if len(ingredient_list) < 3:
 		print("To few ingredients")
 		abort(404)
-	#recipe_data = getRecipes(ingredient_list)
-	recipe_data = test_ingredient_list
-	return jsonify(recipe_data)
+	db = dbConnector.dbConnector()
+	recipes = db.getRecipes(ingredient_list)
+	return jsonify(recipes)
 
 @app.errorhandler(404)
 def not_found(error):
