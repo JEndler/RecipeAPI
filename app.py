@@ -1,8 +1,17 @@
 from flask import abort, jsonify, make_response, Flask 
 from dbConnector import dbConnector
 import json
+from flask_wtf import FlaskForm
+from wtforms import SubmitField, StringField
+from wtforms.validators import Length, URL
 
-app = Flask(__name__)
+app = Flask(__name__,template_folder="templates")
+
+class IngredientForm(FlaskForm):
+    url = StringField('Ingredient', validators=[
+        Length(max=1000, message='Maximum length exceeded!')])
+    submit = SubmitField('Add Ingredient')
+
 
 @app.route('/api/<string:ingredient_list>', methods=['GET'])
 def get_task(ingredient_list):
@@ -24,6 +33,15 @@ def get_task(ingredient_list):
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Invalid Request'}), 404)
+
+# Make an entrypoint for the root domain of the app.
+# This will contain a multiple input WTForm.
+@app.route('/', methods=['GET', 'POST'])
+def root():
+	form = IngredientForm()
+	if request.method == "POST" and form.validate_on_submit():
+		return redirect(url_for('get_task', ingredient_list=form.url.data))
+	return render_template('index.html', form=form)
 
 if __name__ == '__main__':
     app.run(debug=True, port=8027)
