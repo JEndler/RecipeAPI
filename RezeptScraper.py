@@ -9,6 +9,7 @@ import dbConnector
 import logging
 import pickle
 import os
+import time
 
 """
 @Author: Jakob Endler
@@ -131,11 +132,19 @@ def bruteForceRandomRecipes(limit=3000):
 	db.close_connection()
 	return result
 
-startTime = datetime.now()
+if __name__ == "__main__":
 
-if os.environ.get("HTTP_PROXY") is not None:
-	print("Using Proxy.")
+	startTime = datetime.now()
 
-asyncLoad(threads=8, scrape_count=1)
+	if os.environ.get("HTTP_PROXY") is not None:
+		print("Using Proxy.")
 
-print(datetime.now() - startTime)
+	#asyncLoad(threads=8, scrape_count=1)
+
+	for i in range(200000):
+		# Scrape one page, then wait 1 Second
+		asyncSinglePageLoad(CHEFKOCH_RANDOM_LINK)
+		time.sleep(1)
+
+
+	print(datetime.now() - startTime)

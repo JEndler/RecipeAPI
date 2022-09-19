@@ -236,7 +236,6 @@ def main():
 
     connection = dbConnector()
     connection.createDatabase()
-    connection.addRecipe("a", "a", "a" , 0.5, ["Apfel"], ["Vegan"])
     connection.close_connection()
     print("Done")
 

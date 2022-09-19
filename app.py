@@ -1,5 +1,5 @@
 from flask import abort, jsonify, make_response, Flask 
-from dbConnector import dbConnector, getRecipes
+from dbConnector import dbConnector
 import json
 
 app = Flask(__name__)
