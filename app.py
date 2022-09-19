@@ -17,7 +17,7 @@ def get_task(ingredient_list):
 	if len(ingredient_list) < 3:
 		print("To few ingredients")
 		abort(404)
-	db = dbConnector.dbConnector()
+	db = dbConnector()
 	recipes = db.getRecipes(ingredient_list)
 	return jsonify(recipes)
 
