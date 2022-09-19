@@ -1,11 +1,13 @@
-from flask import abort, jsonify, make_response, Flask 
+from flask import abort, jsonify, make_response, Flask, render_template, request, redirect, url_for
 from dbConnector import dbConnector
 import json
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, StringField
 from wtforms.validators import Length, URL
+from os import urandom
 
 app = Flask(__name__,template_folder="templates")
+app.config['SECRET_KEY'] = urandom(32)
 
 class IngredientForm(FlaskForm):
     url = StringField('Ingredient', validators=[
