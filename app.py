@@ -14,7 +14,6 @@ class IngredientForm(FlaskForm):
         Length(max=1000, message='Maximum length exceeded!')])
     submit = SubmitField('Add Ingredient')
 
-
 @app.route('/api/<string:ingredient_list>', methods=['GET'])
 def get_task(ingredient_list):
 	try:
